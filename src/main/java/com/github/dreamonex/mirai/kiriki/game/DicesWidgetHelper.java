@@ -1,8 +1,11 @@
 package com.github.dreamonex.mirai.kiriki.game;
 
-public final class DicesWidget {
+import java.util.List;
+
+public final class DicesWidgetHelper {
     public static enum Kinds {
-        ONES, TWOS, THREES, FOURS, FIVES, SIXES, THREE_OF_A_KIND, FOUR_OF_A_KIND,
+        ONES, TWOS, THREES, FOURS, FIVES, SIXES, GREATER_THAN_SIXTY_TWO,
+        THREE_OF_A_KIND, FOUR_OF_A_KIND,
         FULL_HOUSE, SMALL_STRAIGHT, LARGE_STRAIGHT, CHANCE, KIRIKI
     }
 
@@ -107,5 +110,40 @@ public final class DicesWidget {
     public final static int getKiriki(Dice[] dices) {
         if (getSimilar(dices, 1) == 5 || getSimilar(dices, 2) == 5 || getSimilar(dices, 3) == 5 || getSimilar(dices, 4) == 5 || getSimilar(dices, 5) == 5 || getSimilar(dices, 6) == 5) return 50;
         else return 0;
+    }
+
+    public final static int getScore(List<Dice> dices, Kinds kind) {
+        Dice[] dicesArray = new Dice[dices.size()];
+        dices.toArray(dicesArray);
+        switch (kind) {
+            case ONES:
+                return getOnes(dicesArray);
+            case TWOS:
+                return getTwos(dicesArray);
+            case THREES:
+                return getThrees(dicesArray);
+            case FOURS:
+                return getFours(dicesArray);
+            case FIVES:
+                return getFives(dicesArray);
+            case SIXES:
+                return getSixes(dicesArray);
+            case THREE_OF_A_KIND:
+                return getThreeOfAKind(dicesArray);
+            case FOUR_OF_A_KIND:
+                return getFourOfAKind(dicesArray);
+            case FULL_HOUSE:
+                return getFullHouse(dicesArray);
+            case SMALL_STRAIGHT:
+                return getSmallStraight(dicesArray);
+            case LARGE_STRAIGHT:
+                return getLargeStraight(dicesArray);
+            case CHANCE:
+                return getChance(dicesArray);
+            case KIRIKI:
+                return getKiriki(dicesArray);
+            default:
+                return 0;
+        }
     }
 }
