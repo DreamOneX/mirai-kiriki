@@ -8,30 +8,118 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class Player implements Comparable<Player> {
+    public boolean isComputer;
+    public DicesGroup dicesGroup;
     private long id;
-    private int score;
+    private int totalScore;
     private int lowerScore;
     private int grandScore;
     private int additionalTurns;
     private int remainingRollChance;
-    public boolean isComputer;
-    // A player should have 5 dices at total （ArrayList is not used here because it is not thread-safe）
-    private List<Dice> dices = Collections.synchronizedList(new ArrayList<Dice>(5));
-    private List<Dice> dicesToRoll = Collections.synchronizedList(new LinkedList<Dice>());
-    private List<DicesWidgetHelper.Kinds> usedKinds = Collections.synchronizedList(new LinkedList<DicesWidgetHelper.Kinds>());
-    private Map<DicesWidgetHelper.Kinds, Integer> kindsToScore = Collections.synchronizedMap(new HashMap<DicesWidgetHelper.Kinds, Integer>());
+    private List<DicesWidgetHelper.Kinds> usedKinds;
+    private Map<DicesWidgetHelper.Kinds, Integer> kindsToScore;
+
+    private class DicesGroup {
+        private Map<Dice, Boolean> dices = Collections.synchronizedMap(new HashMap<Dice, Boolean>(5));
+
+        public DicesGroup() {
+            for (int i = 0; i < 5; i++) {
+                dices.put(new Dice(), false);
+            }
+        }
+
+        public void selectDice(Dice dice) throws IllegalArgumentException {
+            if (dices.containsKey(dice)) {
+                dices.put(dice, true);
+            } else {
+                throw new IllegalArgumentException("The dice is not in the group");
+            }
+        }
+
+        public void selectAllDice() {
+            for (Dice dice : dices.keySet()) {
+                dices.put(dice, true);
+            }
+        }
+
+        public void unselectDice(Dice dice) throws IllegalArgumentException {
+            if (dices.containsKey(dice)) {
+                dices.put(dice, false);
+            } else {
+                throw new IllegalArgumentException("The dice is not in the group");
+            }
+        }
+
+        public void unselectAllDices() {
+            for (Dice dice : dices.keySet()) {
+                dices.put(dice, false);
+            }
+        }
+
+        public void rollSelectedDices() throws IllegalStateException {
+            if (remainingRollChance <= 0)
+                throw new IllegalStateException("No more roll chance");
+            for (Dice dice : dices.keySet()) {
+                if (dices.get(dice)) {
+                    dice.roll();
+                }
+            }
+        }
+
+        public void rollAllDices() throws IllegalStateException {
+            if (remainingRollChance <= 0)
+                throw new IllegalStateException("No more roll chance");
+            for (Dice dice : dices.keySet()) {
+                dice.roll();
+            }
+        }
+
+        public List<Dice> getSelectedDices() {
+            List<Dice> selectedDices = new ArrayList<Dice>();
+            for (Dice dice : dices.keySet()) {
+                if (dices.get(dice)) {
+                    selectedDices.add(dice);
+                }
+            }
+            return selectedDices;
+        }
+
+        public List<Dice> getAllDices() {
+            List<Dice> allDices = new ArrayList<Dice>();
+            for (Dice dice : dices.keySet()) {
+                allDices.add(dice);
+            }
+            return allDices;
+        }
+
+        public Map<Dice, Boolean> getDicesMap() {
+            return dices;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            for (Dice dice : dices.keySet()) {
+                sb.append(dice.toString())
+                        .append(" ")
+                        .append(dices.get(dice))
+                        .append("\n");
+            }
+            return sb.toString();
+        }
+    }
 
     public Player(long id) {
         this.id = id;
-        this.score = 0;
+        this.totalScore = 0;
         this.remainingRollChance = 3;
         this.isComputer = false;
         this.lowerScore = 0;
         this.grandScore = 0;
         this.additionalTurns = -1;
-        synchronized (dices) {
-            for (int i = 0; i < 5; i++) dices.add(new Dice());
-        }
+        this.usedKinds = Collections.synchronizedList(new LinkedList<DicesWidgetHelper.Kinds>());
+        this.kindsToScore = Collections.synchronizedMap(new HashMap<DicesWidgetHelper.Kinds, Integer>());
+        this.dicesGroup = new DicesGroup();
     }
 
     public long getId() {
@@ -39,7 +127,7 @@ public class Player implements Comparable<Player> {
     }
 
     public int getScore() {
-        return score;
+        return totalScore;
     }
 
     public int getLowerScore() {
@@ -58,72 +146,41 @@ public class Player implements Comparable<Player> {
         return additionalTurns;
     }
 
-    public List<Dice> getDices() {
-        return dices;
-    }
-
     public List<DicesWidgetHelper.Kinds> getUsedKinds() {
         return usedKinds;
     }
 
-    public List<Dice> getSelectedDices() {
-        return dicesToRoll;
-    }
-
-    // TODO: 等待 Java 实现友元
+    // TODO: 等待 Java 实现友元(划掉)
     protected void freshRemainingRollChance() {
         remainingRollChance = 3;
     }
 
-    public void selectDicesToRoll(int[] dicesToRoll) throws IndexOutOfBoundsException {
-        synchronized (this.dicesToRoll) {
-            this.dicesToRoll.clear();
-            for (int i = 0; i < dicesToRoll.length; i++) {
-                this.dicesToRoll.add(dices.get(dicesToRoll[i]));
-            }
-        }
-    }
-
-    public void addToDiceToRoll(int diceIndex) throws IllegalArgumentException, IndexOutOfBoundsException {
-        if (dicesToRoll.contains(dices.get(diceIndex))) throw new IllegalArgumentException("The dice is already selected.");
-        synchronized (dicesToRoll) {
-            dicesToRoll.add(dices.get(diceIndex));
-        }
-    }
-
-    public void rollDices() throws IllegalStateException {
-        if (remainingRollChance <= 0) throw new IllegalStateException("No remaining roll chance");
-        synchronized (dicesToRoll) {
-            for (Dice dice : dicesToRoll) {
-                dice.roll();
-            }
-            dicesToRoll.clear();
-        }
-    }
-
     public void useKind(DicesWidgetHelper.Kinds kind) throws IllegalArgumentException {
-        if (usedKinds.contains(kind)) throw new IllegalArgumentException("The kind is already used.");
+        if (usedKinds.contains(kind))
+            throw new IllegalArgumentException("The kind is already used.");
         synchronized (this) {
-            score += DicesWidgetHelper.getScore(dices, kind);
-            kindsToScore.put(kind, DicesWidgetHelper.getScore(dices, kind));
-            if (kind == DicesWidgetHelper.Kinds.ONES || kind == DicesWidgetHelper.Kinds.TWOS || kind == DicesWidgetHelper.Kinds.THREES || kind == DicesWidgetHelper.Kinds.FOURS || kind == DicesWidgetHelper.Kinds.FIVES || kind == DicesWidgetHelper.Kinds.SIXES) {
-                lowerScore += DicesWidgetHelper.getScore(dices, kind);
+            int score = DicesWidgetHelper.getScore(dicesGroup.getAllDices(), kind);
+            kindsToScore.put(kind, score);
+            if (kind.ordinal() < 6) {
+                lowerScore += score;
                 if (lowerScore >= 63) {
                     lowerScore += 35;
-                    score += 35;
                     kindsToScore.put(DicesWidgetHelper.Kinds.GREATER_THAN_SIXTY_TWO, 35);
+                    totalScore += 35;
                 }
+            } else {
+                grandScore += score;
             }
-            if (kind == DicesWidgetHelper.Kinds.THREE_OF_A_KIND || kind == DicesWidgetHelper.Kinds.FOUR_OF_A_KIND || kind == DicesWidgetHelper.Kinds.FULL_HOUSE || kind == DicesWidgetHelper.Kinds.SMALL_STRAIGHT || kind == DicesWidgetHelper.Kinds.LARGE_STRAIGHT || kind == DicesWidgetHelper.Kinds.KIRIKI || kind == DicesWidgetHelper.Kinds.CHANCE) {
-                grandScore += DicesWidgetHelper.getScore(dices, kind);
-            }
-            if (kind == DicesWidgetHelper.Kinds.KIRIKI && DicesWidgetHelper.getScore(dices, kind) == 50) additionalTurns += 1;
-            else usedKinds.add(kind);
+            if (score == 50 && kind == DicesWidgetHelper.Kinds.KIRIKI)
+                additionalTurns++;
+            else
+                usedKinds.add(kind);
+            totalScore += score;
         }
     }
 
     @Override
     public int compareTo(Player o) {
-        return Integer.compare(o.score, score);
+        return Integer.compare(o.totalScore, totalScore);
     }
 }
