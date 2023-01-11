@@ -1,11 +1,11 @@
 package com.github.dreamonex.mirai.kiriki.game;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
-import java.util.LinkedList;
 
 public class Player implements Comparable<Player> {
     public boolean isComputer;
@@ -64,6 +64,7 @@ public class Player implements Comparable<Player> {
                     dice.roll();
                 }
             }
+            remainingRollChance--;
         }
 
         public void rollAllDices() throws IllegalStateException {
@@ -72,6 +73,7 @@ public class Player implements Comparable<Player> {
             for (Dice dice : dices.keySet()) {
                 dice.roll();
             }
+            remainingRollChance--;
         }
 
         public List<Dice> getSelectedDices() {
@@ -126,7 +128,7 @@ public class Player implements Comparable<Player> {
         return id;
     }
 
-    public int getScore() {
+    public int getTotalScore() {
         return totalScore;
     }
 
