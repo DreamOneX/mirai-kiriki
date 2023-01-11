@@ -19,77 +19,96 @@ public class Player implements Comparable<Player> {
     private List<DicesWidgetHelper.Kinds> usedKinds;
     private Map<DicesWidgetHelper.Kinds, Integer> kindsToScore;
 
-    private class DicesGroup {
+    public class DicesGroup {
         private Map<Dice, Boolean> dices = Collections.synchronizedMap(new HashMap<Dice, Boolean>(5));
 
         public DicesGroup() {
-            for (int i = 0; i < 5; i++) {
-                dices.put(new Dice(), false);
+            synchronized (dices) {
+                for (int i = 0; i < 5; i++) {
+                    dices.put(new Dice(), false);
+                }
             }
         }
 
         public void selectDice(Dice dice) throws IllegalArgumentException {
-            if (dices.containsKey(dice)) {
-                dices.put(dice, true);
-            } else {
-                throw new IllegalArgumentException("The dice is not in the group");
+            synchronized (dices) {
+                if (dices.containsKey(dice)) {
+                    dices.put(dice, true);
+                } else {
+                    throw new IllegalArgumentException("The dice is not in the dices group.");
+                }
             }
         }
 
         public void selectAllDice() {
-            for (Dice dice : dices.keySet()) {
-                dices.put(dice, true);
+            synchronized (dices) {
+                for (Dice dice : dices.keySet()) {
+                    dices.put(dice, true);
+                }
             }
         }
 
         public void unselectDice(Dice dice) throws IllegalArgumentException {
-            if (dices.containsKey(dice)) {
-                dices.put(dice, false);
-            } else {
-                throw new IllegalArgumentException("The dice is not in the group");
+            synchronized (dices) {
+                if (dices.containsKey(dice)) {
+                    dices.put(dice, false);
+                } else {
+                    throw new IllegalArgumentException("The dice is not in the dices group.");
+                }
             }
         }
 
         public void unselectAllDices() {
-            for (Dice dice : dices.keySet()) {
-                dices.put(dice, false);
+            synchronized (dices) {
+                for (Dice dice : dices.keySet()) {
+                    dices.put(dice, false);
+                }
             }
         }
 
         public void rollSelectedDices() throws IllegalStateException {
             if (remainingRollChance <= 0)
                 throw new IllegalStateException("No more roll chance");
-            for (Dice dice : dices.keySet()) {
-                if (dices.get(dice)) {
-                    dice.roll();
+            synchronized (dices) {
+                for (Dice dice : dices.keySet()) {
+                    if (dices.get(dice)) {
+                        dice.roll();
+                    }
                 }
+                remainingRollChance--;
             }
-            remainingRollChance--;
+            this.unselectAllDices();
         }
 
         public void rollAllDices() throws IllegalStateException {
             if (remainingRollChance <= 0)
                 throw new IllegalStateException("No more roll chance");
-            for (Dice dice : dices.keySet()) {
-                dice.roll();
+            synchronized (dices) {
+                for (Dice dice : dices.keySet()) {
+                    dice.roll();
+                }
+                remainingRollChance--;
             }
-            remainingRollChance--;
         }
 
         public List<Dice> getSelectedDices() {
-            List<Dice> selectedDices = new ArrayList<Dice>();
-            for (Dice dice : dices.keySet()) {
-                if (dices.get(dice)) {
-                    selectedDices.add(dice);
+            List<Dice> selectedDices = Collections.synchronizedList(new ArrayList<Dice>());
+            synchronized (dices) {
+                for (Dice dice : dices.keySet()) {
+                    if (dices.get(dice)) {
+                        selectedDices.add(dice);
+                    }
                 }
             }
             return selectedDices;
         }
 
         public List<Dice> getAllDices() {
-            List<Dice> allDices = new ArrayList<Dice>();
-            for (Dice dice : dices.keySet()) {
-                allDices.add(dice);
+            List<Dice> allDices = Collections.synchronizedList(new ArrayList<Dice>());
+            synchronized (dices) {
+                for (Dice dice : dices.keySet()) {
+                    allDices.add(dice);
+                }
             }
             return allDices;
         }
