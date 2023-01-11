@@ -82,17 +82,13 @@ public class GameSession {
                         return false;
                     }
                     for (Player player : additionalTurnPlayers) {
-                        player.freshRemainingRollChance();
-                        player.dicesGroup.rollAllDices();
-                        player.dicesGroup.unselectAllDices(); // TODO: dicesGroup.freshDices & player.reset
+                        player.reset();
                     }
                 }
             } else {
                 synchronized (players) {
                     for (Player player : players) {
-                        player.freshRemainingRollChance();
-                        player.dicesGroup.rollAllDices();
-                        player.dicesGroup.unselectAllDices(); // TODO: dicesGroup.freshDices & player.reset
+                        player.reset();
                     }
                 }
             }

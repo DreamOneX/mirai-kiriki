@@ -117,6 +117,11 @@ public class Player implements Comparable<Player> {
             return dices;
         }
 
+        public void freshDices() {
+            this.rollAllDices();
+            this.unselectAllDices();
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -174,6 +179,11 @@ public class Player implements Comparable<Player> {
     // TODO: 等待 Java 实现友元(划掉)
     protected void freshRemainingRollChance() {
         remainingRollChance = 3;
+    }
+
+    protected void reset() {
+        this.freshRemainingRollChance();
+        this.dicesGroup.freshDices();
     }
 
     public void useKind(DicesWidgetHelper.Kinds kind) throws IllegalArgumentException {
