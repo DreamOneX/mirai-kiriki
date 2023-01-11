@@ -2,6 +2,8 @@
 .idea/
 .project
 .classpath
+.settings
+bin/
 
 *.iml
 *.ipr
