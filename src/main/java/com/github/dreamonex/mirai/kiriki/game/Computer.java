@@ -13,4 +13,6 @@ public class Computer extends Player {
         super((int) (Math.random() * 1000000));
         this.isComputer = true;
     }
+
+    // TODO: AI (2023-1-11)
 }
