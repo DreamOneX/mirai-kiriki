@@ -1,7 +1,6 @@
 package com.github.dreamonex.mirai.kiriki.game;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class GameSession {
@@ -20,8 +19,8 @@ public class GameSession {
         this.playerCount = playerCount;
         this.computerPlayerCount = playerCount - realPlayerCount;
         this.currentTurn = 0;
-        this.additionalTurnPlayers = Collections.synchronizedList(new ArrayList<Player>());
-        this.players = Collections.synchronizedList(new ArrayList<Player>(playerCount));
+        this.additionalTurnPlayers = new ArrayList<Player>();
+        this.players = new ArrayList<Player>(playerCount);
         for (int i = 0; i < realPlayerCount; i++) {
             players.add(new Player(realPlayerIDs.get(i)));
         }
@@ -77,19 +76,15 @@ public class GameSession {
             currentTurn++;
             if (currentTurn >= DicesWidgetHelper.Kinds.values().length) {
                 this.additionalTurn();
-                synchronized (additionalTurnPlayers) {
-                    if (additionalTurnPlayers.size() == 0) {
-                        return false;
-                    }
-                    for (Player player : additionalTurnPlayers) {
-                        player.reset();
-                    }
+                if (additionalTurnPlayers.size() == 0) {
+                    return false;
+                }
+                for (Player player : additionalTurnPlayers) {
+                    player.reset();
                 }
             } else {
-                synchronized (players) {
-                    for (Player player : players) {
-                        player.reset();
-                    }
+                for (Player player : players) {
+                    player.reset();
                 }
             }
         }
@@ -105,11 +100,9 @@ public class GameSession {
     }
 
     public void additionalTurn() {
-        synchronized (players) {
-            for (Player player : players) {
-                if (player.getAdditionalTurns() > 0) {
-                    additionalTurnPlayers.add(player);
-                }
+        for (Player player : players) {
+            if (player.getAdditionalTurns() > 0) {
+                additionalTurnPlayers.add(player);
             }
         }
         if (additionalTurnPlayers.size() > 0) {

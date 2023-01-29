@@ -1,7 +1,6 @@
 package com.github.dreamonex.mirai.kiriki.game;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,95 +19,77 @@ public class Player implements Comparable<Player> {
     private Map<DicesWidgetHelper.Kinds, Integer> kindsToScore;
 
     public class DicesGroup {
-        private Map<Dice, Boolean> dices = Collections.synchronizedMap(new HashMap<Dice, Boolean>(5));
+        private Map<Dice, Boolean> dices = new HashMap<Dice, Boolean>(5);
 
         public DicesGroup() {
-            synchronized (dices) {
-                for (int i = 0; i < 5; i++) {
-                    dices.put(new Dice(), false);
-                }
+            for (int i = 0; i < 5; i++) {
+                dices.put(new Dice(), false);
             }
         }
 
         public void selectDice(Dice dice) throws IllegalArgumentException {
-            synchronized (dices) {
-                if (dices.containsKey(dice)) {
-                    dices.put(dice, true);
-                } else {
-                    throw new IllegalArgumentException("The dice is not in the dices group.");
-                }
+            if (dices.containsKey(dice)) {
+                dices.put(dice, true);
+            } else {
+                throw new IllegalArgumentException("The dice is not in the dices group.");
             }
         }
 
         public void selectAllDice() {
-            synchronized (dices) {
-                for (Dice dice : dices.keySet()) {
-                    dices.put(dice, true);
-                }
+            for (Dice dice : dices.keySet()) {
+                dices.put(dice, true);
             }
         }
 
         public void unselectDice(Dice dice) throws IllegalArgumentException {
-            synchronized (dices) {
-                if (dices.containsKey(dice)) {
-                    dices.put(dice, false);
-                } else {
-                    throw new IllegalArgumentException("The dice is not in the dices group.");
-                }
+            if (dices.containsKey(dice)) {
+                dices.put(dice, false);
+            } else {
+                throw new IllegalArgumentException("The dice is not in the dices group.");
             }
         }
 
         public void unselectAllDices() {
-            synchronized (dices) {
-                for (Dice dice : dices.keySet()) {
-                    dices.put(dice, false);
-                }
+            for (Dice dice : dices.keySet()) {
+                dices.put(dice, false);
             }
         }
 
         public void rollSelectedDices() throws IllegalStateException {
             if (remainingRollChance <= 0)
                 throw new IllegalStateException("No more roll chance");
-            synchronized (dices) {
-                for (Dice dice : dices.keySet()) {
-                    if (dices.get(dice)) {
-                        dice.roll();
-                    }
+            for (Dice dice : dices.keySet()) {
+                if (dices.get(dice)) {
+                    dice.roll();
                 }
-                remainingRollChance--;
             }
+            remainingRollChance--;
             this.unselectAllDices();
         }
 
         public void rollAllDices() throws IllegalStateException {
             if (remainingRollChance <= 0)
                 throw new IllegalStateException("No more roll chance");
-            synchronized (dices) {
-                for (Dice dice : dices.keySet()) {
-                    dice.roll();
-                }
-                remainingRollChance--;
+            for (Dice dice : dices.keySet()) {
+                dice.roll();
             }
+            remainingRollChance--;
         }
 
         public List<Dice> getSelectedDices() {
-            List<Dice> selectedDices = Collections.synchronizedList(new ArrayList<Dice>());
-            synchronized (dices) {
-                for (Dice dice : dices.keySet()) {
-                    if (dices.get(dice)) {
-                        selectedDices.add(dice);
-                    }
+            List<Dice> selectedDices = new ArrayList<Dice>();
+            for (Dice dice : dices.keySet()) {
+                if (dices.get(dice)) {
+                    selectedDices.add(dice);
                 }
             }
             return selectedDices;
         }
 
         public List<Dice> getAllDices() {
-            List<Dice> allDices = Collections.synchronizedList(new ArrayList<Dice>());
-            synchronized (dices) {
-                for (Dice dice : dices.keySet()) {
-                    allDices.add(dice);
-                }
+            List<Dice> allDices = new ArrayList<Dice>();
+            for (Dice dice : dices.keySet()) {
+                allDices.add(dice);
             }
             return allDices;
         }
@@ -143,8 +124,8 @@ public class Player implements Comparable<Player> {
         this.lowerScore = 0;
         this.grandScore = 0;
         this.additionalTurns = -1;
-        this.usedKinds = Collections.synchronizedList(new LinkedList<DicesWidgetHelper.Kinds>());
-        this.kindsToScore = Collections.synchronizedMap(new HashMap<DicesWidgetHelper.Kinds, Integer>());
+        this.usedKinds = new LinkedList<DicesWidgetHelper.Kinds>();
+        this.kindsToScore = new HashMap<DicesWidgetHelper.Kinds, Integer>();
         this.dicesGroup = new DicesGroup();
     }
 
@@ -189,25 +170,23 @@ public class Player implements Comparable<Player> {
     public void useKind(DicesWidgetHelper.Kinds kind) throws IllegalArgumentException {
         if (usedKinds.contains(kind))
             throw new IllegalArgumentException("The kind is already used.");
-        synchronized (this) {
-            int score = DicesWidgetHelper.getScore(dicesGroup.getAllDices(), kind);
-            kindsToScore.put(kind, score);
-            if (kind.ordinal() < 6) {
-                lowerScore += score;
-                if (lowerScore >= 63) {
-                    lowerScore += 35;
-                    kindsToScore.put(DicesWidgetHelper.Kinds.GREATER_THAN_SIXTY_TWO, 35);
-                    totalScore += 35;
-                }
-            } else {
-                grandScore += score;
+        int score = DicesWidgetHelper.getScore(dicesGroup.getAllDices(), kind);
+        kindsToScore.put(kind, score);
+        if (kind.ordinal() < 6) {
+            lowerScore += score;
+            if (lowerScore >= 63) {
+                lowerScore += 35;
+                kindsToScore.put(DicesWidgetHelper.Kinds.GREATER_THAN_SIXTY_TWO, 35);
+                totalScore += 35;
             }
-            if (score == 50 && kind == DicesWidgetHelper.Kinds.KIRIKI)
-                additionalTurns++;
-            else
-                usedKinds.add(kind);
-            totalScore += score;
+        } else {
+            grandScore += score;
         }
+        if (score == 50 && kind == DicesWidgetHelper.Kinds.KIRIKI)
+            additionalTurns++;
+        else
+            usedKinds.add(kind);
+        totalScore += score;
     }
 
     @Override
